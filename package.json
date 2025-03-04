@@ -1,0 +1,30 @@
+{
+  "name": "base",
+  "version": "1.0.0",
+  "description": "base",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "base",
+  "license": "MIT",
+  "dependencies": {
+    "@adiwajshing/keyed-db": "^0.2.4",
+    "@fizzxydev/baileys-pro": "^8.6.8",
+    "@hapi/boom": "^10.0.1",
+    "@vreden/youtube_scraper": "^1.2.5",
+    "@whiskeysockets/baileys": "latest",
+    "awesome-phonenumber": "^2.64.0",
+    "axios": "^1.6.8",
+    "bing-translate-api": "^4.0.2",
+    "chalk": "^5.4.1",
+    "crypto": "^1.0.1",
+    "didyoumean": "^1.2.2",
+    "moment-timezone": "^0.5.47",
+    "pino": "^7.0.5",
+    "ruhend-scraper": "^9.0.0",
+    "similarity": "^1.2.1",
+    "yt-search": "^2.12.1",
+    "ytdl-core": "^4.11.5"
+  }
+}
