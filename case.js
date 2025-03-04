@@ -244,7 +244,7 @@ Perkenalkan saya adalah *${namabot}* Diciptakan Oleh *${namaOwner}* Untuk Memban
 kenz.sendMessage(m.chat, {
  image: { url: 'https://img12.pixhost.to/images/628/572153211_kenzhosting.jpg'},
  caption: awal,
-footer: `─ Waktu: *${ucapanWaktu}*\n─ Runtime : *${runtime(process.uptime())}*`,
+footer: `─ Waktu: *${ucapanWaktu}*\n─ Runtime : *${runtime(process.uptime())}*\n© 2025 Kenz Creator`,
  contextInfo: {
 mentionedJid: [m.sender, owned],
 forwardingScore: 999,
