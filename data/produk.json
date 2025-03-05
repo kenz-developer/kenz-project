@@ -1,0 +1,32 @@
+[
+    {
+        "id": "P001",
+        "nama": "Panel Ram 1 GB",
+        "harga": "Rp 2.000",
+        "deskripsi": "Panel untuk bot WhatsApp dengan fitur lengkap."
+    },
+    {
+        "id": "P002",
+        "nama": "Panel Ram 2 GB",
+        "harga": "Rp 3.000",
+        "deskripsi": "Panel untuk bot WhatsApp dengan fitur lengkap."
+    },
+    {
+        "id": "P003",
+        "nama": "Panel Ram 3 GB",
+        "harga": "Rp 4.000",
+        "deskripsi": "Panel untuk bot WhatsApp dengan fitur lengkap."
+    },
+    {
+        "id": "P004",
+        "nama": "Panel Ram 4 GB",
+        "harga": "Rp 5.000",
+        "deskripsi": "Panel untuk bot WhatsApp dengan fitur lengkap."
+    },
+    {
+        "id": "P005",
+        "nama": "Source Code Store",
+        "harga": "Rp 20.000",
+        "deskripsi": "Source code toko online dengan auto-delivery."
+    }
+]
