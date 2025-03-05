@@ -1,7 +1,11 @@
-/*
-   * Base Simpel
-   * Created By Kenz Creator
-*/
+/**
+ * 
+ * 
+ *  SCRIPT BY KENZ CREATOR
+ *  [ NO HAPUS CREDITS ]
+ * 
+ * 
+ */
 
 
 const { default: makeWASocket, DisconnectReason, makeInMemoryStore, jidDecode, proto, getContentType, useMultiFileAuthState, downloadContentFromMessage } = require("@fizzxydev/baileys-pro")
@@ -9,6 +13,7 @@ const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
 const chalk = require("chalk").default
+const FileType = require('file-type');
 const readline = require("readline");
 const PhoneNumber = require('awesome-phonenumber')
 
@@ -17,7 +22,7 @@ const store = makeInMemoryStore({ logger: pino().child({ level: 'silent', stream
 const question = (text) => { const rl = readline.createInterface({ input: process.stdin, output: process.stdout }); return new Promise((resolve) => { rl.question(text, resolve) }) };
 
 async function startBotz() {
-const { state, saveCreds } = await useMultiFileAuthState("session")
+const { state, saveCreds } = await useMultiFileAuthState("ses/session")
 const kenz = makeWASocket({
 logger: pino({ level: "silent" }),
 printQRInTerminal: false,
@@ -34,10 +39,10 @@ browser: ["Ubuntu", "Chrome", "20.0.04"],
 });
 
 if (!kenz.authState.creds.registered) {
-const phoneNumber = await question('Masukan Nomor Whatsapp Anda Berawalan 62 :\n');
+const phoneNumber = await question('Enter your whatsapp number starting with 62 :\n');
 let code = await kenz.requestPairingCode(phoneNumber);
 code = code?.match(/.{1,4}/g)?.join("-") || code;
-console.log(`𝙲𝙾𝙳𝙴 𝙿𝙰𝙸𝚁𝙸𝙽𝙶 :`, code);
+console.log(`Pairing your code :`, code);
 }
 
 store.bind(kenz.ev)
@@ -92,6 +97,7 @@ const { connection, lastDisconnect } = update;
 if (connection === 'close') {
 let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
 if (reason === DisconnectReason.badSession || reason === DisconnectReason.connectionClosed || reason === DisconnectReason.connectionLost || reason === DisconnectReason.connectionReplaced || reason === DisconnectReason.restartRequired || reason === DisconnectReason.timedOut) {
+  console.log(chalk.green.bold("Restarting Bot..."))
 startBotz();
 } else if (reason === DisconnectReason.loggedOut) {
 } else {
@@ -105,6 +111,22 @@ console.log(chalk.bgGrey.cyan('[Connected To] ' + JSON.stringify(kenz.user.id, n
 kenz.ev.on('creds.update', saveCreds)
 
 kenz.sendText = (jid, text, quoted = '', options) => kenz.sendMessage(jid, { text: text, ...options }, { quoted })
+
+kenz.downloadAndSaveMediaMessage = async (message, filename, attachExtension = true) => {
+let quoted = message.msg ? message.msg : message
+let mime = (message.msg || message).mimetype || ''
+let messageType = message.mtype ? message.mtype.replace(/Message/gi, '') : mime.split('/')[0]
+const stream = await downloadContentFromMessage(quoted, messageType)
+let buffer = Buffer.from([])
+for await(const chunk of stream) {
+buffer = Buffer.concat([buffer, chunk])
+}
+let type = await FileType.fromBuffer(buffer)
+let trueFileName = attachExtension ? ('./sticker/' + filename + '.' + type.ext) : './sticker/' + filename
+// save to file
+await fs.writeFileSync(trueFileName, buffer)
+return trueFileName
+}
 
 kenz.downloadMediaMessage = async (message) => {
 let mime = (message.msg || message).mimetype || ''

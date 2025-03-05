@@ -16,13 +16,50 @@ const { runtime, fetchJson, isUrl, getBuffer, tanggal } = require("./lib/functio
 const { remini, tiktokDl } = require("./lib/scraper.js")
 const { ytmp3, ytmp4 } = require("ruhend-scraper")
 
+const path = "./case.js";
+
+const Case = {
+    list: () => {
+        if (!fs.existsSync(path)) return [];
+        let data = fs.readFileSync(path, "utf-8");
+        let matches = [...data.matchAll(/case\s+["'](.+?)["']/g)];
+        return matches.map(m => m[1]);
+    },
+
+    add: (name, content) => {
+        if (!fs.existsSync(path)) fs.writeFileSync(path, "");
+        let currentData = fs.readFileSync(path, "utf-8");
+        fs.writeFileSync(path, currentData + "\n\n" + content);
+        return true;
+    },
+
+    delete: (name) => {
+        if (!fs.existsSync(path)) return false;
+        let data = fs.readFileSync(path, "utf-8");
+        let newData = data.replace(new RegExp(`case\\s+["']${name}["']\\s*:\\s*{[\\s\\S]*?break;`, "g"), "").trim();
+        fs.writeFileSync(path, newData);
+        return true;
+    },
+
+    get: (name) => {
+        if (!fs.existsSync(path)) return false;
+        let data = fs.readFileSync(path, "utf-8");
+        let match = data.match(new RegExp(`case\\s+["']${name}["']\\s*:\\s*{([\\s\\S]*?)break;`, "g"));
+        return match ? match[0] : false;
+    }
+};
+
+module.exports = Case;
+
 const { 
 BufferJSON,
 WA_DEFAULT_EPHEMERAL,
 useMultiFileAuthState,
 makeWASocket,
 Browsers,
+downloadAndSaveMediaMessage,
 makeCacheableSignalKeyStore,
+sendAsSticker,
 pino,
 generateWAMessageFromContent,
 generateWAMessageContent,
@@ -140,9 +177,9 @@ const groupMembers = isGroup ? groupMetadata.participants : ''
 if (budy.startsWith('kntl', 'goblok', 'kontol', 'gblk', 'kntol', 'tolol', 'tlol', 'pea', 'ytm', 'yatim', 'yteam', 'ytim', 'lawak', 'memek', 'mmk', 'mmek', 'anj', 'ajg', 'anjg', 'anjing', 'anjink', 'lonte', 'ngentod', 'ngentot', 'ngewe', 'ngtd', 'ngntd', 'pepek', 'ppk', 'ppek', 'jomok', 'gila', 'asu', 'lonte', 'anjgg')) {
 if (!isGroup) return
 if (isKenz) return
-if (!isBotAdmins) return m.Reply(`lu lebih ${budy}`)
+if (!isBotAdmins) return m.reply(`lu lebih ${budy}`)
 if (sender == botNumber) return
-m.Reply("Allah tidak menyukai perkataan buruk, yang diucapkan secara terus terang kecuali oleh orang yang dizalimi. Dan Allah Maha mendengar, Maha mengetahui\n*QS. An-Nisa: 148*")
+m.reply("Allah tidak menyukai perkataan buruk, yang diucapkan secara terus terang kecuali oleh orang yang dizalimi. Dan Allah Maha mendengar, Maha mengetahui\n*QS. An-Nisa: 148*")
 kenz.sendMessage(m.chat, {
 delete: {
 remoteJid: m.chat,
@@ -225,62 +262,63 @@ let sim = similarity(noPrefix, mean);
 let similarityPercentage = parseInt(sim * 100);
 if (mean && noPrefix.toLowerCase() !== mean.toLowerCase()) {
 let response = `Maaf, command yang kamu berikan salah. mungkin ini yang kamu maksud:\n\n•> ${prefix+mean}\n•> Kemiripan: ${similarityPercentage}%`
-m.Reply(response)
+m.reply(response)
 }}
 
 //===================================//
 
 switch(command) {
 case "menu": case "help": {
-const owned = owner + "@s.whatsapp.net"
-let awal = `Selamat datang kak *${pushname}*
-Perkenalkan saya adalah *${namabot}* Diciptakan Oleh *${namaOwner}* Untuk Membantu keseharian kamu kak ${pushname},Selamat menggunakan Bot kami kasih saran dong kasi fitur apa?
+    const owned = owner + "@s.whatsapp.net";
+    let awal = `Selamat datang kak *${pushname}*
+Perkenalkan saya adalah *${namabot}*, diciptakan oleh *${namaOwner}* untuk membantu keseharian kamu kak ${pushname}. Selamat menggunakan bot kami, kasih saran dong fitur apa yang kamu mau?
 
 *\`[ INFO BOT 🤖 ]\`*
 > *Runtime Bot : ${runtime(process.uptime())}*
-> NAMA SCRIPT : ${namasc}
-> TYPE SCRIPT : COMMONJS
-`
-kenz.sendMessage(m.chat, {
- image: { url: 'https://img12.pixhost.to/images/628/572153211_kenzhosting.jpg'},
- caption: awal,
-footer: `─ Waktu: *${ucapanWaktu}*\n─ Runtime : *${runtime(process.uptime())}*\n© 2025 Kenz Creator`,
- contextInfo: {
-mentionedJid: [m.sender, owned],
-forwardingScore: 999,
-isForwarded: true,
-externalAdReply: {
-  showAdAttribution: true, 
-  title: `Ramadhan 2025`,
-  body: "Kenz - Botz",
-  thumbnailUrl: global.image.menu,
-  sourceUrl: "https://whatsapp.com/channel/0029VawsCnQ9mrGkOuburC1z",
-  mediaType: 1,
-  renderLargerThumbnail: true
-}}, 
-  buttons: [
-  {
- buttonId: '.allmenu',
- buttonText: {
- displayText: 'All Menu Botz'
- },
- type: 2,
-  },
- {                  
-                     name: "cta_url",
-                     buttonParamsJson:  `{\"display_text\":\"Kenz Market\",\"url\":\"${linkowner}\",\"merchant_url\":\"https://www.google.com\"}`
-                    },
-  {
- type: 4,
-  },
-  ],
-  headerType: 3,
-  viewOnce: true
-})
+> *NAMA SCRIPT : ${namasc}*
+> *TYPE SCRIPT : COMMONJS*
+`;
+
+    let imgsc = await prepareWAMessageMedia({ image: { url: 'https://files.catbox.moe/okcg1g.jpg' } }, { upload: kenz.waUploadToServer });
+
+    const msg = await generateWAMessageFromContent(m.chat, {
+        interactiveMessage: proto.Message.InteractiveMessage.fromObject({
+            body: proto.Message.InteractiveMessage.Body.fromObject({ text: awal }),
+            contextInfo: { mentionedJid: [m.sender, owned] },
+            header: proto.Message.InteractiveMessage.Header.fromObject({
+                hasMediaAttachment: true,
+                title: `─ Waktu: *${ucapanWaktu}*\n─ Runtime : *${runtime(process.uptime())}*\n© 2025 Kenz Creator`,
+                ...imgsc
+            }),
+            footer: proto.Message.InteractiveMessage.Footer.fromObject({ text: "Silakan pilih menu di bawah ini.\n\nKETIK .allmenu UNTUK MELIHAT SEMUA MENU" }),
+            buttons: [
+                {
+                    buttonId: ".allmenu",
+                    buttonText: { displayText: "📜 All Menu Botz" },
+                    type: 1
+                }
+            ],
+            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({
+                buttons: [
+                    {
+                        name: "cta_url",
+                        buttonParamsJson: JSON.stringify({
+                            display_text: "🔗 Hubungi Owner",
+                            url: linkowner,
+                            merchant_url: "https://www.google.com"
+                        })
+                    }
+                ]
+            })
+        })
+    }, { userJid: m.sender, quoted: m });
+
+    await kenz.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
 }
-break
+break;
 
 case "allmenu": {
+  let status = global.owner.includes(m.sender) ? "👑 Owner" : "😹 User Biasa";
   const kawin = `*BERIKUT ALL MENU BOT RAMADHAN 2025*
 
 *\`[ INFO BOT ]\`*
@@ -291,6 +329,11 @@ case "allmenu": {
 > *UCAPAN : ${ucapanWaktu}*
 > *NAMA OWNER : ${namaOwner}*
 > *VERSION BAILEYS : ${global.baileys}*
+
+*\`[ INFO USER ]\`*
+> *NAMA USER : ${pushname}*
+> *NUMBER USER : wa.me/${senderNumber}*
+> *STATUS USER : ${status}*
 
 *\`[ ALL MENU BOT ]\`*
 
@@ -325,13 +368,16 @@ case "allmenu": {
 *.gitclone*
 *.sfile*
 *.tourl*
+*.tourl2*
 *.hdr*
 *.ssweb*
 *.shortlink*
 
 \`─ INSTALL MENU BOT ─\`
 *.installpanel*
+*.uninstallpanel*
 *.installtemabilling*
+*.uninstalltema*
 *.startwings*
 
 \`─ ISLAM MENU BOT ─\`
@@ -342,9 +388,18 @@ case "allmenu": {
 \`─ SPAM MENU BOT ─\`
 *.sendpairing*
 
+\`─ PUSH MENU BOT ─\`
+*.pushkontak*
+
 \`─ OTHER MENU BOT ─\`
 *.listgc*
+*.tagall*
+*.hidetag*
+*.listdomain*
+*.cookpad*
 *.cekidch*
+*.upch*
+*.tagsw*
 `
 kenz.sendMessage(m.chat, {
     caption: kawin,
@@ -357,11 +412,611 @@ kenz.sendMessage(m.chat, {
 }
 break
 
+case "beli": {
+    const fs = require("fs");
+    const crypto = require("crypto");
+    const pathProduk = "./data/produk.json";
+    const pathOrder = "./data/order.json";
+    const qrisImage = "./data/qris.jpg"; // QRIS tetap di folder
+    const buyerID = m.sender.split("@")[0];
+
+    if (!fs.existsSync(pathProduk)) return Reply("Data store belum tersedia!");
+
+    let data = JSON.parse(fs.readFileSync(pathProduk));
+    let idProduk = args[0];
+
+    if (!idProduk) return Reply("Format salah! Gunakan: *beli <IDProduk>*\nContoh: *beli P001*");
+
+    let produk = data.find(p => p.id.toLowerCase() === idProduk.toLowerCase());
+    if (!produk) return Reply("Produk tidak ditemukan! Cek ID produk yang benar.");
+
+    let idTRX = crypto.randomBytes(6).toString("hex").toUpperCase(); // ID transaksi unik
+    let expiredAt = new Date(Date.now() + 5 * 60000).toLocaleTimeString();
+
+    let text = `📌 *Detail Produk*\n\n🔹 *Nama:* ${produk.nama}\n💰 *Harga:* ${produk.harga}\n📝 *Deskripsi:* ${produk.deskripsi}\n📌 *ID Produk:* ${produk.id}\n📌 *ID Transaksi:* ${idTRX}\n\n✅ *Gunakan QRIS di bawah untuk pembayaran!*\n📌 *Expired:* ${expiredAt}`;
+
+    let buttons = [
+        { buttonId: `.batalbeli ${idTRX}`, buttonText: { displayText: "❌ Batalkan Pembelian" }, type: 1 }
+    ];
+
+    let buttonMessage = {
+        image: { url: qrisImage },
+        caption: text,
+        footer: "Segera lakukan pembayaran sebelum waktu habis.",
+        buttons: buttons,
+        headerType: 4
+    };
+
+    // **Kirim QRIS dan simpan ID pesan**
+    let sentMsg = await kenz.sendMessage(m.chat, buttonMessage, { quoted: m });
+
+    // **SIMPAN ORDER KE order.json**
+    let orders = fs.existsSync(pathOrder) ? JSON.parse(fs.readFileSync(pathOrder)) : [];
+    orders.push({
+        idTRX,
+        buyerID,
+        pushName: m.pushName,
+        senderNumber: m.sender,
+        productID: produk.id,
+        productName: produk.nama,
+        price: produk.harga,
+        expiredAt: Date.now() + 5 * 60000,
+        msgKey: sentMsg.key.id // Simpan ID pesan buat dihapus nanti
+    });
+    fs.writeFileSync(pathOrder, JSON.stringify(orders, null, 2));
+
+    // **HAPUS PESAN QRIS SETELAH 5 MENIT**
+    setTimeout(() => {
+        let updatedOrders = JSON.parse(fs.readFileSync(pathOrder)).filter(o => o.idTRX !== idTRX);
+        fs.writeFileSync(pathOrder, JSON.stringify(updatedOrders, null, 2));
+        kenz.sendMessage(m.chat, { delete: sentMsg.key }); // Hapus pesan QRIS
+        Reply("⏳ Waktu pembayaran habis! QRIS telah dihapus.");
+    }, 5 * 60000);
+
+    return;
+}
+break;
+
+case "batalbeli": {
+    const pathOrder = "./data/order.json";
+
+    let idTRX = args[0]; // Ambil ID transaksi dari command
+    if (!idTRX) return Reply("Format salah! Gunakan: *batalbeli <IDTransaksi>*");
+
+    if (!fs.existsSync(pathOrder)) return Reply("Tidak ada transaksi yang bisa dibatalkan!");
+
+    let orders = JSON.parse(fs.readFileSync(pathOrder));
+    let orderIndex = orders.findIndex(o => o.idTRX === idTRX);
+
+    if (orderIndex === -1) return Reply("Transaksi tidak ditemukan atau sudah expired!");
+
+    let order = orders[orderIndex];
+
+    // **Hapus pesan QRIS**
+    if (order.msgKey) {
+        kenz.sendMessage(m.chat, { delete: { remoteJid: m.chat, fromMe: true, id: order.msgKey } });
+    }
+
+    // **Hapus order dari JSON**
+    orders.splice(orderIndex, 1);
+    fs.writeFileSync(pathOrder, JSON.stringify(orders, null, 2));
+
+    Reply(`✅ Transaksi *${idTRX}* telah dibatalkan & QRIS dihapus!`);
+}
+break;
+
+case "store": {
+    const fs = require("fs");
+    const path = "./data/produk.json";
+
+    if (!fs.existsSync(path)) return Reply("Data store belum tersedia!");
+
+    let data = JSON.parse(fs.readFileSync(path));
+    if (data.length === 0) return Reply("Store masih kosong!");
+
+    let text = "*📦 DAFTAR PRODUK STORE 📦*\n\n";
+    data.forEach((item, index) => {
+        text += `🔹 *${item.nama}*\n💰 Harga: ${item.harga}\n📝 Deskripsi: ${item.deskripsi}\n📌 ID Produk: ${item.id}\n\nKETIK .beli JIKA INGIN BELI PRODUK\n\n`;
+    });
+
+    let buttons = [
+        { buttonId: `.beli`, buttonText: { displayText: "Silahkan Pilih Produk" }, type: 1 }
+    ];
+
+    let msg = generateWAMessageFromContent(m.chat, {
+        viewOnceMessage: {
+            message: {
+                "messageContextInfo": {
+                    "deviceListMetadata": {},
+                    "deviceListMetadataVersion": 2
+                },
+                interactiveMessage: proto.Message.InteractiveMessage.create({
+                    body: proto.Message.InteractiveMessage.Body.create({ text }),
+                    footer: proto.Message.InteractiveMessage.Footer.create({ text: "Silakan hubungi admin untuk pembelian." }),
+                    header: proto.Message.InteractiveMessage.Header.create({
+                        title: "💎 KENZDEV STORE 💎",
+                        subtitle: "Tersedia berbagai produk",
+                        hasMediaAttachment: false
+                    }),
+                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                        buttons
+                    })
+                })
+            }
+        }
+    }, {});
+
+    return kenz.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+}
+break;
+
+case "cookpad": {
+const axios = require('axios')
+const cheerio = require('cheerio')
+
+class CookpadScraper {
+  constructor(searchTerm) {
+    this.searchTerm = searchTerm;
+    this.baseUrl = 'https://cookpad.com/id/cari/';
+  }
+
+  async fetchSearchResults(page = 1) {
+    const url = `${this.baseUrl}${this.searchTerm}?page=${page}`;
+    const response = await axios.get(url);
+    return cheerio.load(response.data);
+  }
+
+  async extractRecipeLinks($) {
+    const links = [];
+    $('a.block-link__main').each((i, el) => {
+      const href = $(el).attr('href');
+      if (href) {
+        links.push(`https://cookpad.com${href}`);
+      }
+    });
+    if (links.length === 0 && $('.text-cookpad-14.xs\\:text-cookpad-20.font-semibold').text().includes('Tidak dapat menemukan resep?')) {
+      throw new Error('Tidak ditemukan resep untuk pencarian ini.');
+    }
+    return links;
+  }
+
+  async fetchRecipePage(url) {
+    const response = await axios.get(url);
+    return cheerio.load(response.data);
+  }
+
+  async extractRecipeDetails($) {
+    const title = $('h1').text().trim();
+    const mainImage = $('img[alt^="Foto resep"]').attr('src');
+    const cookingTime = $('.flex.flex-wrap .mise-icon-text').first().text().trim();
+    const serving = $('.flex.flex-wrap .mise-icon-text').last().text().trim();
+
+    const ingredients = [];
+    $('#ingredients .ingredient-list ol li').each((i, el) => {
+      if ($(el).hasClass('font-semibold')) {
+        const subheading = $(el).find('span').text().trim();
+        ingredients.push(`*${subheading}*`);
+      } else {
+        const quantity = $(el).find('bdi').text().trim();
+        const ingredient = $(el).find('span').text().trim();
+        ingredients.push(`- ${quantity} ${ingredient}`);
+      }
+    });
+
+    const steps = [];
+    $('ol.list-none li.step').each((i, el) => {
+      const stepNumber = $(el).find('.flex-shrink-0 .text-cookpad-14').text().trim();
+      const description = $(el).find('div[dir="auto"] p').text().trim();
+      steps.push(`${stepNumber}. ${description}`);
+    });
+
+    return {
+      title,
+      mainImage,
+      cookingTime,
+      serving,
+      ingredients: ingredients.join('\n'),
+      steps: steps.join('\n')
+    };
+  }
+
+  async scrapeRecipes() {
+    try {
+      const $ = await this.fetchSearchResults();
+      const links = await this.extractRecipeLinks($);
+
+      if (links.length === 0) {
+        throw new Error('Tidak ditemukan resep untuk pencarian ini.');
+      }
+
+      const recipePage = await this.fetchRecipePage(links[0]);
+      return await this.extractRecipeDetails(recipePage);
+    } catch (error) {
+      return { error: error.message };
+    }
+  }
+}
+  if (!text) return Reply('Masukkan nama resep yang ingin dicari.\nContoh: .resep ayam goreng');
+
+  let scraper = new CookpadScraper(text);
+  let recipe = await scraper.scrapeRecipes();
+
+  if (recipe.error) return Reply(recipe.error);
+
+  let caption = `*${recipe.title}*\n\n` +
+                `*Waktu Masak :* ${recipe.cookingTime}\n` +
+                `*Porsi :* ${recipe.serving}\n\n` +
+                `*Bahan-Bahan :*\n${recipe.ingredients}\n\n` +
+                `*Langkah-Langkah :*\n${recipe.steps}`;
+
+  if (recipe.mainImage) {
+    kenz.sendMessage(m.chat, { image: { url: recipe.mainImage }, caption }, { quoted: m });
+  } else {
+    Reply(caption);
+  }
+};
+break
+
+case "listdomain": {
+    let domains = Object.keys(global.subdomain);
+    if (domains.length === 0) return m.reply("⚠️ Tidak ada domain yang tersedia.");
+
+    let buttons = domains.map(domain => ({
+        name: "cta_url",
+        buttonParamsJson: JSON.stringify({
+            display_text: `🌐 ${domain}`,
+            url: `https://${domain}`
+        })
+    }));
+
+    let imgsc = await prepareWAMessageMedia({ image: { url: global.image.reply }}, { upload: kenz.waUploadToServer });
+
+    const msgii = await generateWAMessageFromContent(m.chat, {
+        ephemeralMessage: {
+            message: {
+                messageContextInfo: {
+                    deviceListMetadata: {},
+                    deviceListMetadataVersion: 2
+                },
+                interactiveMessage: proto.Message.InteractiveMessage.fromObject({
+                    body: proto.Message.InteractiveMessage.Body.fromObject({
+                        text: "*🌐 List Domain yang Tersedia:*"
+                    }), 
+                    header: proto.Message.InteractiveMessage.Header.fromObject({
+                        title: "🌍 Pilih Domain yang Ingin Dibuka",
+                        hasMediaAttachment: true,
+                        ...imgsc
+                    }),
+                    nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.fromObject({
+                        buttons
+                    })
+                })
+            }
+        }
+    }, { userJid: m.sender, quoted: m });
+
+    await kenz.relayMessage(m.chat, msgii.message, { messageId: msgii.key.id });
+}
+break;
+
+case "hidetag": {
+if (!m.isGroup) return Reply(mess.group)
+if (!isCreator && !m.isAdmins) return Reply(mess.admin)
+if (!text) return m.reply(example("pesannya"))
+let member = m.metadata.participants.map(v => v.id)
+await kenz.sendMessage(m.chat, {text: text, mentions: [...member]}, {quoted: m})
+}
+break
+
+case 'tourl2': {
+const axios = require('axios')
+const cheerio = require('cheerio')
+const FormData = require('form-data')
+
+async function postimg(buffer) {
+  try {
+    let data = new FormData()
+    data.append('optsize', '0')
+    data.append('expire', '0')
+    data.append('numfiles', '1')
+    data.append('upload_session', Math.random())
+    data.append('file', buffer, `${Date.now()}.jpg`)
+
+    const res = await axios.post('https://postimages.org/json/rr', data)
+    const html = await axios.get(res.data.url)
+    const $ = cheerio.load(html.data)
+
+    let link = $('#code_html').attr('value')
+    let image = $('#code_direct').attr('value')
+    let delimg = $('#code_remove').attr('value')
+
+    return { link, image, delimg }
+  } catch (err) {
+    throw err
+  }
+}
+  try {
+    let q = m.quoted ? m.quoted : m
+    let mime = (q.msg || q).mimetype || ''
+    if (!/image/.test(mime)) return Reply(`Kirim gambar dengan caption *${prefix + command}* atau balas gambar`)
+
+    let media = await q.download()
+
+    Reply('Tunggu Bentar...')
+
+    let result = await postimg(media)
+
+    let caption = `*Successful Image Upload*\n\n` +
+                  `*Link HTML :* ${result.link}\n` +
+                  `*Direct Link :* ${result.image}\n` +
+                  `*Delete Image :* ${result.delimg}`
+
+    await kenz.sendMessage(m.chat, { image: { url: result.image }, caption }, { quoted: m })
+  } catch (e) {
+    Reply(`*Gagal mengunggah gambar:*\n${e}`)
+  }
+}
+break
+
+case "uninstalltema": case "untema": {
+if (!isCreator) return Reply(mess.owner)
+if (!text || !text.split("|")) return m.reply(example("ipvps|pwvps"))
+let vii = text.split("|")
+if (vii.length < 2) return m.reply(example("ipvps|pwvps"))
+global.installtema = {
+vps: vii[0], 
+pwvps: vii[1]
+}
+
+let ipvps = global.installtema.vps
+let passwd = global.installtema.pwvps
+let pilihan = text
+
+const connSettings = {
+ host: ipvps,
+ port: '22',
+ username: 'root',
+ password: passwd
+}
+    
+const command = `bash <(curl -s https://raw.githubusercontent.com/SkyzoOffc/Pterodactyl-Theme-Autoinstaller/main/install.sh)`
+const ress = new Client();
+
+await m.reply("Memproses *uninstall* tema pterodactyl\nTunggu 1-10 menit hingga proses selsai")
+
+ress.on('ready', () => {
+ress.exec(command, (err, stream) => {
+if (err) throw err
+stream.on('close', async (code, signal) => {    
+await m.reply("Berhasil *uninstall* tema pterodactyl ✅")
+ress.end()
+}).on('data', async (data) => {
+console.log(data.toString())
+stream.write(`skyzodev\n`) // Key Token : skyzodev
+stream.write(`2\n`)
+stream.write(`y\n`)
+stream.write(`x\n`)
+}).stderr.on('data', (data) => {
+console.log('STDERR: ' + data)
+});
+});
+}).on('error', (err) => {
+console.log('Connection Error: ' + err);
+m.reply('Katasandi atau IP tidak valid');
+}).connect(connSettings);
+}
+break
+
+case "uninstallpanel": case "unpanel": {
+if (!isCreator) return m.reply(mess.owner);
+if (!text || !text.split("|")) return m.reply(example("ipvps|pwvps"))
+var vpsnya = text.split("|")
+if (vpsnya.length < 2) return m.reply(example("ipvps|pwvps|domain"))
+let ipvps = vpsnya[0]
+let passwd = vpsnya[1]
+const connSettings = {
+host: ipvps, port: '22', username: 'root', password: passwd
+}
+const boostmysql = `\n`
+const command = `bash <(curl -s https://pterodactyl-installer.se)`
+const ress = new Client();
+ress.on('ready', async () => {
+
+await m.reply("Memproses *uninstall* server panel\nTunggu 1-10 menit hingga proses selsai")
+
+ress.exec(command, async (err, stream) => {
+if (err) throw err;
+stream.on('close', async (code, signal) => {
+await ress.exec(boostmysql, async (err, stream) => {
+if (err) throw err;
+stream.on('close', async (code, signal) => {
+await m.reply("Berhasil *uninstall* server panel ✅")
+}).on('data', async (data) => {
+await console.log(data.toString())
+if (data.toString().includes(`Remove all MariaDB databases? [yes/no]`)) {
+await stream.write("\x09\n")
+}
+}).stderr.on('data', (data) => {
+m.reply('Berhasil Uninstall Server Panel ✅');
+});
+})
+}).on('data', async (data) => {
+await console.log(data.toString())
+if (data.toString().includes(`Input 0-6`)) {
+await stream.write("6\n")
+}
+if (data.toString().includes(`(y/N)`)) {
+await stream.write("y\n")
+}
+if (data.toString().includes(`* Choose the panel user (to skip don\'t input anything):`)) {
+await stream.write("\n")
+}
+if (data.toString().includes(`* Choose the panel database (to skip don\'t input anything):`)) {
+await stream.write("\n")
+}
+}).stderr.on('data', (data) => {
+m.reply('STDERR: ' + data);
+});
+});
+}).on('error', (err) => {
+m.reply('Katasandi atau IP tidak valid')
+}).connect(connSettings)
+}
+break
+
+case "pushkontak": {
+if (!isCreator) return Reply(mess.owner)
+if (!text) return m.reply(example("pesannya"))
+const meta = await kenz.groupFetchAllParticipating()
+let dom = await Object.keys(meta)
+global.textpushkontak = global.tekspush
+let list = []
+for (let i of dom) {
+await list.push({
+title: meta[i].subject, 
+id: `.respushkontak ${i}`, 
+description: `${meta[i].participants.length} Member`
+})
+}
+return kenz.sendMessage(m.chat, {
+  buttons: [
+    {
+    buttonId: 'action',
+    buttonText: { displayText: 'ini pesan interactiveMeta' },
+    type: 4,
+    nativeFlowInfo: {
+        name: 'single_select',
+        paramsJson: JSON.stringify({
+          title: 'Pilih Grup Push Kontak',
+          sections: [
+            {
+              title: 'List Grup Chat',
+              rows: [...list]              
+            }
+          ]
+        })
+      }
+      }
+  ],
+  footer: `© WhatsApp Bots - 2025`,
+  headerType: 1,
+  viewOnce: true,
+  text: "Pilih Target Grup Pushkontak\n",
+  contextInfo: {
+   isForwarded: true, 
+   mentionedJid: [m.sender, global.owner+"@s.whatsapp.net"], 
+  },
+}, {quoted: m}) 
+}
+break
+
+case "addcase": {
+    if (!isCreator) return Reply("Fitur ini hanya bisa digunakan oleh owner!");
+
+    let cap = "*– 乂 Cara Penggunaan Fitur Case*\n";
+    cap += "> *➕ `--add`* untuk menambah fitur case baru\n";
+    cap += "> *🔄 `--get`* untuk mengambil fitur case yang ada\n";
+    cap += "> *❌ `--delete`* untuk menghapus fitur case\n";
+    cap += "\n*– 乂 Daftar Case yang Tersedia :*\n";
+    cap += Case.list().map((a, i) => `> *${i + 1}.* ${a}`).join("\n");
+
+    if (!q) return Reply(cap);
+
+    if (q.includes("--add")) {
+        if (!m.quoted) return Reply("> *⚠️ Balas dengan fitur case yang ingin disimpan!*");
+        
+        let caseContent = m.quoted.body;
+        let caseNameMatch = caseContent.match(/case\s+["'](.+?)["']/);
+        if (!caseNameMatch) return Reply("> *❌ Format case tidak valid!*");
+
+        let caseName = caseNameMatch[1];
+
+        if (Case.list().includes(caseName)) return Reply("> *❌ Case sudah ada!*");
+
+        let status = Case.add(caseName, caseContent);
+        Reply(status ? "> *✅ Berhasil menambahkan case baru!*" : "> *❌ Gagal menambahkan case baru!*");
+    } 
+    
+    else if (q.includes("--delete")) {
+        let input = q.replace("--delete", "").trim();
+        if (!input) return Reply("> *⚠️ Masukkan nama case yang ingin dihapus!*");
+        let status = Case.delete(input);
+        Reply(status ? `> *✅ Berhasil menghapus case: ${input}!*` : `> *❌ Case ${input} tidak ditemukan!*`);
+    } 
+    
+    else if (q.includes("--get")) {
+        let input = q.replace("--get", "").trim();
+        if (!input) return Reply("> *⚠️ Masukkan nama case yang ingin diambil!*");
+        let status = Case.get(input);
+        Reply(status ? status : `> *❌ Case ${input} tidak ditemukan!*`);
+    }
+}
+break;
+
+case "tr": case "translate": {
+let language
+let teks
+let defaultLang = "en"
+if (text || m.quoted) {
+let translate = require('translate-google-api')
+if (text && !m.quoted) {
+if (args.length < 2) return m.reply(example("id good night"))
+language = args[0]
+teks = text.split(" ").slice(1).join(' ')
+} else if (m.quoted) {
+if (!text) return m.reply(example("id good night"))
+if (args.length < 1) return m.reply(example("id good night"))
+if (!m.quoted.text) return m.reply(example("id good night"))
+language = args[0]
+teks = m.quoted.text
+}
+let result
+try {
+result = await translate(`${teks}`, {to: language})
+} catch (e) {
+result = await translate(`${teks}`, {to: defaultLang})
+} finally {
+m.reply(result[0])
+}
+} else {
+return m.reply(example("id good night"))
+}}
+break
+
+case "rvo": case "readviewonce": {
+if (!m.quoted) return m.reply(example("dengan reply pesannya"))
+let msg = m.quoted.message
+    let type = Object.keys(msg)[0]
+if (!msg[type].viewOnce) return m.reply("Pesan itu bukan viewonce!")
+let media = await downloadContentFromMessage(msg[type], type == 'imageMessage' ? 'image' : type == 'videoMessage' ? 'video' : 'audio')
+    let buffer = Buffer.from([])
+    for await (const chunk of media) {
+        buffer = Buffer.concat([buffer, chunk])
+    }
+    if (/video/.test(type)) {
+        return kenz.sendMessage(m.chat, {video: buffer, caption: msg[type].caption || ""}, {quoted: m})
+    } else if (/image/.test(type)) {
+        return kenz.sendMessage(m.chat, {image: buffer, caption: msg[type].caption || ""}, {quoted: m})
+    } else if (/audio/.test(type)) {
+        return kenz.sendMessage(m.chat, {audio: buffer, mimetype: "audio/mpeg", ptt: true}, {quoted: m})
+    } 
+}
+break
+
+case "s": case "sticker": case "stiker": {
+if (!/image|video/gi.test(mime)) return m.reply(example("dengan kirim media"))
+if (/video/gi.test(mime) && qmsg.seconds > 15) return m.reply("Durasi vidio maksimal 15 detik!")
+var image = await kenz.downloadAndSaveMediaMessage(qmsg)
+await kenz.sendAsSticker(m.chat, image, m, {packname: global.packname})
+await fs.unlinkSync(image)
+}
+break
+
 case 'update': {
     if (!isCreator) return Reply(mess.owner);
 
     const defaultIndexUrl = '';
-    const defaultCaseUrl = '';
+    const defaultCaseUrl = 'https://raw.githubusercontent.com/kenz-developer/kenz-project/refs/heads/main/case.js';
 
     if (!args[0]) {
       try {
@@ -472,32 +1127,11 @@ case "spam-pairing": {
             console.log(`OTP Code #${i + 1}:`, otpCode);
         } catch (error) {
             console.error(`Gagal mengirim OTP #${i + 1}:`, error);
-            if (error.output?.statusCode === 428 && error.output?.payload?.message === 'Connection Closed') break;
+            if (error.output?.statusCode === 428 && error.output?.payload?.message === 'kenzection Closed') break;
         }
     }
 
     Reply(`Selesai mengirim ${amount} kode OTP.`);
-}
-break;
-
-case "update": {
-    if (!isCreator) return Reply(mess.owner);
-    if (!q) return Reply("Masukkan URL file yang ingin diperbarui!\nContoh: update https://raw.githubusercontent.com/user/repo/branch/file.js");
-
-    let fileName = q.split("/").pop(); // Ambil nama file dari URL
-
-    try {
-        let res = await axios.get(q);
-        let newData = res.data;
-
-        await fs.writeFileSync(fileName, newData, "utf-8");
-
-        Reply(`✅ *Berhasil memperbarui ${fileName}!*`);
-        process.exit(); // Restart bot biar update langsung berlaku
-    } catch (err) {
-        console.error(err);
-        Reply(`⚠️ Gagal memperbarui ${fileName}:\n${err.message}`);
-    }
 }
 break;
 
@@ -897,8 +1531,8 @@ case "slink": {
 break;
 
 case "cekidch": case "idch": {
-if (!text) return m.Reply(example("linkchnya"))
-if (!text.includes("https://whatsapp.com/channel/")) return m.Reply("Link tautan tidak valid")
+if (!text) return m.reply(example("linkchnya"))
+if (!text.includes("https://whatsapp.com/channel/")) return m.reply("Link tautan tidak valid")
 let result = text.split('https://whatsapp.com/channel/')[1]
 let res = await kenz.newsletterMetadata("invite", result)
 let teks = `
@@ -908,7 +1542,7 @@ let teks = `
 * *Status :* ${res.state}
 * *Verified :* ${res.verification == "VERIFIED" ? "Terverifikasi" : "Tidak"}
 `
-return m.Reply(teks)
+return m.reply(teks)
 }
 break
 
@@ -925,35 +1559,35 @@ teks += `\n* *ID :* ${u.id}
 * *Status :* ${u.announce == false ? "Terbuka": "Hanya Admin"}
 * *Pembuat :* ${u?.subjectOwner ? u?.subjectOwner.split("@")[0] : "Sudah Keluar"}\n`
 }
-return m.Reply(teks)
+return m.reply(teks)
 }
 break
 
 case "tiktokmp3": case "ttmp3": case "ttaudio": {
-if (!text) return m.Reply(example("linknya"))
-if (!text.startsWith('https://')) return m.Reply("Link tautan tidak valid")
+if (!text) return m.reply(example("linknya"))
+if (!text.startsWith('https://')) return m.reply("Link tautan tidak valid")
 await tiktokDl(text).then(async (res) => {
-if (!res.status) return m.Reply("Error! Result Not Found")
+if (!res.status) return m.reply("Error! Result Not Found")
 await kenz.sendMessage(m.chat, {audio: {url: res.music_info.url}, mimetype: "audio/mpeg"}, {quoted: m})
-}).catch((e) => m.Reply("Error"))
+}).catch((e) => m.reply("Error"))
 }
 break
 
 case "installtemabilling": case "instaltemabiling": {
 if (!isCreator) return Reply(mess.owner)
-if (!text || !text.split("|")) return m.Reply(example("ipvps|pwvps"))
+if (!text || !text.split("|")) return m.reply(example("ipvps|pwvps"))
 let vii = text.split("|")
-if (vii.length < 2) return m.Reply(example("ipvps|pwvps"))
+if (vii.length < 2) return m.reply(example("ipvps|pwvps"))
 global.installtema = {
 vps: vii[0], 
 pwvps: vii[1]
 }
-if (global.installtema == undefined) return m.Reply("Ip / Password Vps Tidak Ditemukan")
+if (global.installtema == undefined) return m.reply("Ip / Password Vps Tidak Ditemukan")
 
 let ipvps = global.installtema.vps
 let passwd = global.installtema.pwvps
 
-const connSettings = {
+const kenzSettings = {
  host: ipvps,
  port: '22',
  username: 'root',
@@ -964,11 +1598,11 @@ const command = `bash <(curl -s https://raw.githubusercontent.com/SkyzoOffc/Pter
 const ress = new Client();
 
 ress.on('ready', () => {
-m.Reply("Memproses install *tema billing* pterodactyl\nTunggu 1-10 menit hingga proses selsai")
+m.reply("Memproses install *tema billing* pterodactyl\nTunggu 1-10 menit hingga proses selsai")
 ress.exec(command, (err, stream) => {
 if (err) throw err
 stream.on('close', async (code, signal) => {    
-await m.Reply("Berhasil install *tema billing* pterodactyl ✅")
+await m.reply("Berhasil install *tema billing* pterodactyl ✅")
 ress.end()
 }).on('data', async (data) => {
 console.log(data.toString())
@@ -982,22 +1616,22 @@ console.log('STDERR: ' + data)
 });
 });
 }).on('error', (err) => {
-console.log('Connection Error: ' + err);
-m.Reply('Katasandi atau IP tidak valid');
-}).connect(connSettings);
+console.log('kenzection Error: ' + err);
+m.reply('Katasandi atau IP tidak valid');
+}).kenzect(kenzSettings);
 }
 break
 
 case "startwings": case "configurewings": {
 if (!isCreator) return Reply(mess.owner)
 let t = text.split('|')
-if (t.length < 3) return m.Reply(example("ipvps|pwvps|token_node"))
+if (t.length < 3) return m.reply(example("ipvps|pwvps|token_node"))
 
 let ipvps = t[0]
 let passwd = t[1]
 let token = t[2]
 
-const connSettings = {
+const kenzSettings = {
  host: ipvps,
  port: '22',
  username: 'root',
@@ -1011,28 +1645,28 @@ ress.on('ready', () => {
 ress.exec(command, (err, stream) => {
 if (err) throw err
 stream.on('close', async (code, signal) => {    
-await m.Reply("*Berhasil menjalankan wings ✅*\n* Status wings : *aktif*")
+await m.reply("*Berhasil menjalankan wings ✅*\n* Status wings : *aktif*")
 ress.end()
 }).on('data', async (data) => {
 await console.log(data.toString())
 }).stderr.on('data', (data) => {
 stream.write("y\n")
 stream.write("systemctl start wings\n")
-m.Reply('STDERR: ' + data);
+m.reply('STDERR: ' + data);
 });
 });
 }).on('error', (err) => {
-console.log('Connection Error: ' + err);
-m.Reply('Katasandi atau IP tidak valid');
-}).connect(connSettings);
+console.log('kenzection Error: ' + err);
+m.reply('Katasandi atau IP tidak valid');
+}).kenzect(kenzSettings);
 }
 break
 
 case "installpanel": {
 if (!isCreator) return Reply(mess.owner)
-if (!text) return m.Reply(example("ipvps|pwvps|panel.com|node.com|ramserver *(contoh 100000)*"))
+if (!text) return m.reply(example("ipvps|pwvps|panel.com|node.com|ramserver *(contoh 100000)*"))
 let vii = text.split("|")
-if (vii.length < 5) return m.Reply(example("ipvps|pwvps|panel.com|node.com|ramserver *(contoh 100000)*"))
+if (vii.length < 5) return m.reply(example("ipvps|pwvps|panel.com|node.com|ramserver *(contoh 100000)*"))
 let sukses = false
 
 const ress = new Client();
@@ -1212,7 +1846,7 @@ console.log('STDERR: ' + data);
 }
 
 ress.on('ready', async () => {
-await m.Reply("Memproses *install* server panel \nTunggu 1-10 menit hingga proses selsai")
+await m.reply("Memproses *install* server panel \nTunggu 1-10 menit hingga proses selsai")
 ress.exec(deletemysql, async (err, stream) => {
 if (err) throw err;
 stream.on('close', async (code, signal) => {
@@ -1225,7 +1859,7 @@ await console.log(data.toString())
 console.log('Stderr : ' + data);
 });
 });
-}).connect(kenzSettings);
+}).kenzect(kenzSettings);
 }
 break
 
@@ -1285,7 +1919,7 @@ break
 case "tagall": {
 if (!m.isGroup) return Reply(mess.group)
 if (!isCreator && !m.isAdmins) return Reply(mess.admin)
-if (!text) return m.Reply(example("pesannya"))
+if (!text) return m.reply(example("pesannya"))
 let teks = text+"\n\n"
 let member = await m.metadata.participants.map(v => v.id).filter(e => e !== botNumber && e !== m.sender)
 await member.forEach((e) => {
@@ -1296,10 +1930,10 @@ await kenz.sendMessage(m.chat, {text: teks, mentions: [...member]}, {quoted: m})
 break
 
 case "tiktok": {
-if (!text) return m.Reply(example("url"))
-if (!text.startsWith("https://")) return m.Reply(example("url"))
+if (!text) return m.reply(example("url"))
+if (!text.startsWith("https://")) return m.reply(example("url"))
 await tiktokDl(q).then(async (result) => {
-if (!result.status) return m.Reply("Error")
+if (!result.status) return m.reply("Error")
 if (result.durations == 0 && result.duration == "0 Seconds") {
 let araara = new Array()
 let urutan = 0
@@ -1346,48 +1980,97 @@ await kenz.sendMessage(m.chat, {video: {url: urlVid.url}, mimetype: 'video/mp4',
 break
 
 case "tourl": {
-const axios = require("axios");
-const FormData = require("form-data");
-const fs = require("fs");
+    const axios = require("axios");
+    const FormData = require("form-data");
 
-    if (!m.quoted) return m.Reply("Reply media yang mau diupload!");
-    let mime = m.quoted.mimetype || "";
-    if (!/image|video/.test(mime)) return m.Reply("Hanya bisa upload gambar/video!");
+    var q = m.quoted ? m.quoted : m;
+    let mime = q.mimetype || "";
 
-    let media = await m.quoted.download();
-    let form = new FormData();
-    form.append("reqtype", "fileupload");
-    form.append("fileToUpload", media, { filename: "upload" });
-
-    let headers = { ...form.getHeaders() };
-
-    axios.post("https://catbox.moe/user/api.php", form, { headers })
-        .then(({ data }) => {
-            m.Reply(`*Berhasil diupload ke catbox.moe :*\n${data}\n*Expired : Permanent*`);
-        })
-        .catch(err => {
-            m.Reply("Gagal upload!");
-            console.error(err);
+    if (/image/g.test(mime) && !/webp/g.test(mime)) {
+        kenz.sendMessage(m.chat, {
+            react: { text: "🕒", key: m.key }
         });
 
-    break;
+        try {
+            const img = await q.download?.();
+            const fileSizeInBytes = img.length;
+            const fileSizeInKB = (fileSizeInBytes / 1024).toFixed(2);
+            const fileSizeInMB = (fileSizeInBytes / (1024 * 1024)).toFixed(2);
+            const fileSize = fileSizeInMB >= 1 ? `${fileSizeInMB} MB` : `${fileSizeInKB} KB`;
+
+            const form = new FormData();
+            form.append("reqtype", "fileupload");
+            form.append("fileToUpload", img, "image.jpg");
+
+            let resImg = await axios.post("https://catbox.moe/user/api.php", form, {
+                headers: form.getHeaders()
+            });
+
+            let imageUrl = resImg.data.trim();
+            let msg = generateWAMessageFromContent(m.chat, {
+                viewOnceMessage: {
+                    message: {
+                        "messageContextInfo": {
+                            "deviceListMetadata": {},
+                            "deviceListMetadataVersion": 2
+                        },
+                        interactiveMessage: proto.Message.InteractiveMessage.create({
+                            body: proto.Message.InteractiveMessage.Body.create({
+                                text: `Size : ${fileSize}\nDi Upload Pada : `
+                            }),
+                            footer: proto.Message.InteractiveMessage.Footer.create({
+                                text: time,
+                                text: `Upload By Kenz`
+                            }),
+                            header: proto.Message.InteractiveMessage.Header.create({
+                                title: "*Berhasil Upload*",
+                                subtitle: "test",
+                                hasMediaAttachment: true,
+                                ...(await prepareWAMessageMedia({ image: { url: imageUrl } }, { upload: kenz.waUploadToServer }))
+                            }),
+                            nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                                buttons: [
+                                    {
+                                        "name": "cta_copy",
+                                        "buttonParamsJson": `{\"display_text\":\"COPY URL\",\"id\":\"123456789\",\"copy_code\":\"${imageUrl}\"}`
+                                    }
+                                ]
+                            })
+                        })
+                    }
+                }
+            }, {});
+
+            return kenz.relayMessage(m.chat, msg.message, { messageId: msg.key.id });
+            kenz.sendMessage(m.chat, {
+              react: { text: "✅", key: m.key }
+            })
+
+        } catch (e) {
+            console.error(e);
+            Reply(`[ ! ] Gagal mengubah gambar menjadi URL. Error: ${e.message}`);
+        }
+    } else {
+        Reply(`Kirim gambar dengan caption *${prefix + command}* atau reply gambar yang sudah dikirim`);
+    }
 }
+break;
 
 case "shortlink": case "shorturl": {
-if (!text) return m.Reply(example("https://example.com"))
-if (!isUrl(text)) return m.Reply(example("https://example.com"))
+if (!text) return m.reply(example("https://example.com"))
+if (!isUrl(text)) return m.reply(example("https://example.com"))
 var res = await axios.get('https://tinyurl.com/api-create.php?url='+encodeURIComponent(text))
 var link = `
 * *Shortlink by tinyurl.com*
 ${res.data.toString()}
 `
-return m.Reply(link)
+return m.reply(link)
 }
 break
 
 case "proses": {
     if (!isCreator) return Reply(mess.owner);
-    if (!q) return m.Reply(example("jasa install panel"));
+    if (!q) return m.reply(example("jasa install panel"));
 
     let now = new Date();
     let tanggal = now.toLocaleString("id-ID", { 
@@ -1426,7 +2109,7 @@ break;
 
 case "done": {
     if (!isCreator) return Reply(mess.owner);
-    if (!q) return m.Reply(example("jasa install panel"));
+    if (!q) return m.reply(example("jasa install panel"));
     let now = new Date();
     let tanggal = now.toLocaleString("id-ID", {
         weekday: "long", 
@@ -1461,8 +2144,8 @@ ${linkapi}`;
 break;
 
 case "ssweb": {
-if (!text) return m.Reply(example("https://example.com"))
-if (!isUrl(text)) return m.Reply(example("https://example.com"))
+if (!text) return m.reply(example("https://example.com"))
+if (!isUrl(text)) return m.reply(example("https://example.com"))
 var data = await fetchJson(`https://restapi-v2.simplebot.my.id/tools/ssweb?url=${text}`)
 await kenz.sendMessage(m.chat, { image: { url: data.result.iurl}, mimetype: "image/png"}, {quoted: m})
 }
@@ -1470,18 +2153,18 @@ break
 
 case "addidch": case "addch": {
 if (!isCreator) return Reply(mess.owner)
-if (!text) return m.Reply(example("idchnya"))
-if (!text.endsWith("@newsletter")) return m.Reply("Id channel tidak valid")
+if (!text) return m.reply(example("idchnya"))
+if (!text.endsWith("@newsletter")) return m.reply("Id channel tidak valid")
 let input = text
-if (listidch.includes(input)) return m.Reply(`Id ${input2} sudah terdaftar!`)
+if (listidch.includes(input)) return m.reply(`Id ${input2} sudah terdaftar!`)
 listidch.push(input)
 await fs.writeFileSync("./data/listidch.json", JSON.stringify(listidch, null, 2))
-m.Reply(`Berhasil menambah id channel kedalam database ✅`)
+m.reply(`Berhasil menambah id channel kedalam database ✅`)
 }
 break
 
 case "listidch": case "listch": {
-if (listidch.length < 1) return m.Reply("Tidak ada id channel di database")
+if (listidch.length < 1) return m.reply("Tidak ada id channel di database")
 let teks = ` *── List all id channel*\n`
 for (let i of listidch) {
 teks += `\n* ${i}\n`
@@ -1491,7 +2174,7 @@ kenz.sendMessage(m.chat, {text: teks, mentions: premium}, {quoted: qtext2})
 break
 
 case "sfile": {
-if (!text) return m.Reply(example('script bot whatsapp'))
+if (!text) return m.reply(example('script bot whatsapp'))
 await kenz.sendMessage(m.chat, {react: {text: '🔎', key: m.key}})
 let ytsSearch = await fetchJson(`https://restapi-v2.simplebot.my.id/search/sfile?q=${text}`)
 const anuan = ytsSearch.result
@@ -1500,14 +2183,14 @@ for (let res of anuan) {
 teks += `* *Title :* ${res.title}
 * *Link :* ${res.link}\n\n`
 }
-await m.Reply(teks)
+await m.reply(teks)
 }
 break
 
 case "gitclone": {
-if (!text) return m.Reply(example("https://github.com/Kenz Creatordev/Simplebot"))
+if (!text) return m.reply(example("https://github.com/Kenz Creatordev/Simplebot"))
 let regex = /(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i
-if (!regex.test(text)) return m.Reply("Link tautan tidak valid")
+if (!regex.test(text)) return m.reply("Link tautan tidak valid")
 try {
     let [, user, repo] = args[0].match(regex) || []
     repo = repo.replace(/.git$/, '')
@@ -1518,7 +2201,7 @@ try {
       url: url }, 
       mimetype: 'application/zip', fileName: `${filename}`}, { quoted : qlocPush })
 } catch (e) {
-await m.Reply(`Error! repositori tidak ditemukan`)
+await m.reply(`Error! repositori tidak ditemukan`)
 }}
 break
 
@@ -1586,25 +2269,25 @@ case 'tagsw': {
             },
         ],
     });
-    m.Reply("done");
+    m.reply("done");
 }
 break;
 
 case "ytmp3": {
-if (!text) return m.Reply(example("linknya"))
-if (!text.startsWith("https://")) return m.Reply("Link Tautan Tidak Valid")
+if (!text) return m.reply(example("linknya"))
+if (!text.startsWith("https://")) return m.reply("Link Tautan Tidak Valid")
 var anu = await ytmp3(text)
 if (anu.audio) {
 let urlMp3 = anu.audio
 await kenz.sendMessage(m.chat, {audio: {url: urlMp3}, mimetype: "audio/mpeg"}, {quoted: m})
 } else {
-return m.Reply("Error! vidio atau lagu tidak ditemukan")
+return m.reply("Error! vidio atau lagu tidak ditemukan")
 }
 }
 break
 
 case "playspotify": case "plays": case "playsp": {
-if (!text) return m.Reply(example("intro ariana"))
+if (!text) return m.reply(example("intro ariana"))
 await kenz.sendMessage(m.chat, {react: {text: '🔎', key: m.key}})
 
 var anu = await fetchJson("https://restapi.simplebot.my.id/api/download/playspotify?q="+text)
@@ -1613,13 +2296,13 @@ if (anu.result.download.link) {
 let urlMp3 = anu.result.download.link
 await kenz.sendMessage(m.chat, {audio: {url: urlMp3}, mimetype: "audio/mpeg", contextInfo: { externalAdReply: {thumbnailUrl: anu.result.metadata.cover_url, title: anu.result.metadata.title, body: `Author ${anu.result.metadata.artists} || Duration ${anu.result.metadata.duration}`, sourceUrl: anu.result.metadata.link, renderLargerThumbnail: true, mediaType: 1}}}, {quoted: m})
 } else {
-return m.Reply("Error! vidio atau lagu tidak ditemukan")
+return m.reply("Error! vidio atau lagu tidak ditemukan")
 }
 }
 break
 
 case "play3": {
-if (!text) return m.Reply(example("dj tiktok"))
+if (!text) return m.reply(example("dj tiktok"))
 await kenz.sendMessage(m.chat, {react: {text: '🔎', key: m.key}})
 let ytsSearch = await yts(text)
 const res = await ytsSearch.all[0]
@@ -1629,7 +2312,7 @@ if (anu.audio) {
 let urlMp3 = anu.audio
 await kenz.sendMessage(m.chat, {audio: {url: urlMp3}, mimetype: "audio/mpeg", contextInfo: { externalAdReply: {thumbnailUrl: res.thumbnail, title: res.title, body: `Author ${res.author.name} || Duration ${res.timestamp}`, sourceUrl: res.url, renderLargerThumbnail: true, mediaType: 1}}}, {quoted: m})
 } else {
-return m.Reply("Error! vidio atau lagu tidak ditemukan")
+return m.reply("Error! vidio atau lagu tidak ditemukan")
 }
 }
 break
@@ -1693,47 +2376,47 @@ Reply(`Error`)
 break
 
 case 'luminai': {
-	if (!text) return m.Reply("Mau nanya apa sama ai")
+	if (!text) return m.reply("Mau nanya apa sama ai")
 let {data} = await axios.get("https://kenz-api.cloudx.biz.id/ai/luminai?text=" + text);
-m.Reply(data.result);
+m.reply(data.result);
 }
 break
 
 case "ai":{
-if (!text) return m.Reply("Mau nanya apa sama ai")
+if (!text) return m.reply("Mau nanya apa sama ai")
 let {data} = await axios.get("https://kenz-api.cloudx.biz.id/ai/gpt-kenz?text=" + text);
-m.Reply(data.result);
+m.reply(data.result);
 }
 break
 
 case "deepseek":{
-if (!text) return m.Reply("Mau nanya apa sama deepseek")
+if (!text) return m.reply("Mau nanya apa sama deepseek")
 let {data} = await axios.get(`https://kenz-api.cloudx.biz.id/ai/deepseekr1?text=${encodeURIComponent(text)}&model=@groq/deepseek-r1-distill-llama-70b`);
-m.Reply(data.result);
+m.reply(data.result);
 }
 break
 
 case "llama":{
-if (!text) return m.Reply("Mau nanya apa sama llama")
+if (!text) return m.reply("Mau nanya apa sama llama")
 let {data} = await axios.get(`https://kenz-api.cloudx.biz.id/ai/llama?text=${encodeURIComponent(text)}&model=@groq/llama-3.1-8b-instant`);
-m.Reply(data.result);
+m.reply(data.result);
 }
 break
 
 case "gpt":{
-if (!text) return m.Reply("Mau nanya apa sama ai")
+if (!text) return m.reply("Mau nanya apa sama ai")
 let {data} = await axios.get("https://kenz-api.cloudx.biz.id/ai/luminai?text=" + text);
-m.Reply(data.result);
+m.reply(data.result);
 }
 break
 
 case "yts": {
-    if (!text) return m.Reply('Masukkan kata kunci pencarian!')
+    if (!text) return m.reply('Masukkan kata kunci pencarian!')
     
     await kenz.sendMessage(m.chat, { react: { text: '🔎', key: m.key } })
     
     let ytsSearch = await yts(text)
-    if (!ytsSearch || !ytsSearch.all || ytsSearch.all.length === 0) return m.Reply("Video tidak ditemukan!")
+    if (!ytsSearch || !ytsSearch.all || ytsSearch.all.length === 0) return m.reply("Video tidak ditemukan!")
 
     let results = ytsSearch.all.slice(0, 10)
     let teks = `🔎 *Hasil Pencarian YouTube untuk:* _${text}_\n\n`
@@ -1766,7 +2449,7 @@ case "yts": {
         })
     }
 
-    await m.Reply(teks)
+    await m.reply(teks)
 
     const msg = await generateWAMessageFromContent(m.chat, {
         viewOnceMessage: {
@@ -1831,7 +2514,7 @@ async function text2img(prompt, size = 512) {
     return { success: true, image: base64 }
 }
 
-    if (!text) return m.Reply('Contoh Penggunaan .text2img Anak Perempuan Jepang Sedang Berlari Ke Kuil')
+    if (!text) return m.reply('Contoh Penggunaan .text2img Anak Perempuan Jepang Sedang Berlari Ke Kuil')
 
     let selectedSize = 512
     if (args.length > 1) {
@@ -1846,13 +2529,13 @@ async function text2img(prompt, size = 512) {
         let translated = await translate(text, null, 'en')
         let result = await text2img(translated.translation, selectedSize)
         
-        if (!result.success) return m.Reply('Gagal membuat gambar, coba lagi!')
+        if (!result.success) return m.reply('Gagal membuat gambar, coba lagi!')
         
         let buffer = Buffer.from(result.image, 'base64')
         await kenz.sendMessage(m.chat, { image: buffer }, { quoted: m })
 
     } catch (error) {
-        m.Reply('Terjadi kesalahan, coba lagi nanti!')
+        m.reply('Terjadi kesalahan, coba lagi nanti!')
     }
 }
 break
@@ -1860,14 +2543,14 @@ break
 case 'play' : {
 const yts = require('yt-search')
 const axios = require('axios')
-    if (!text) return m.Reply(`Mana query nya?\n\nContoh: ${prefix + command} blue yung kau`);
+    if (!text) return m.reply(`Mana query nya?\n\nContoh: ${prefix + command} blue yung kau`);
     
-    m.Reply('Tunggu bentar ya, lagi nyari...');
+    m.reply('Tunggu bentar ya, lagi nyari...');
     
     try {
         const searchResults = await yts(text);
         if (!searchResults.videos.length) {
-            return m.Reply('Hmm, gak ketemu video nya nih. Coba kata kunci lain deh!');
+            return m.reply('Hmm, gak ketemu video nya nih. Coba kata kunci lain deh!');
         }
 
         const video = searchResults.videos[0]; 
@@ -1876,7 +2559,7 @@ const axios = require('axios')
         
         const { data } = await axios.get(apiUrl);
         if (!data.status) {
-            return m.Reply('Waduh, gagal download audio nya. Coba lagi nanti ya!');
+            return m.reply('Waduh, gagal download audio nya. Coba lagi nanti ya!');
         }
 
         const title = data.videoDetails.title;
@@ -1911,7 +2594,7 @@ const axios = require('axios')
         
     } catch (error) {
         console.error('Error:', error);
-        m.Reply('Audio Berhasil Di Download!');
+        m.reply('Audio Berhasil Di Download!');
     }
 };
 break
@@ -2081,7 +2764,7 @@ break
 
 case "getcase": {
 if (!isKenz) return Reply(mess.owner);
-if (!text) return m.Reply("menu");
+if (!text) return m.reply("menu");
 const getcase = (cases) => {
 const fileContent = fs.readFileSync('./case.js').toString();
 const caseRegex = new RegExp(`case ['"]${cases}['"]`, 'i'); // Pencarian case dengan tanda ' atau "
@@ -2092,7 +2775,7 @@ return "case " + `'${cases}'` + match[1].split("break")[0] + "break";
 try {
 Reply(`${getcase(q)}`);
 } catch (e) {
-return m.Reply(`Case *${text}* Tidak Ditemukan`);
+return m.reply(`Case *${text}* Tidak Ditemukan`);
 }
 }
 break;
@@ -2171,13 +2854,13 @@ async function ytdl(url) {
     }
 }
     try {
-        if (!text) return m.Reply('Mau Cari Lagu Afa');
+        if (!text) return m.reply('Mau Cari Lagu Afa');
 
         let videoUrl = text;
 
         if (!yt.test(text)) {
             const { videos } = await yts(text);
-            if (videos.length === 0) return m.Reply('Tidak ada video yang ditemukan.');
+            if (videos.length === 0) return m.reply('Tidak ada video yang ditemukan.');
 
             const selectedVideo = videos[0];
             videoUrl = selectedVideo.url;
@@ -2204,7 +2887,7 @@ async function ytdl(url) {
         }, { quoted: m });
 
     } catch (e) {
-        m.Reply(`Yah error :(\n${e.message}`);
+        m.reply(`Yah error :(\n${e.message}`);
     }
 }
 break
@@ -2224,12 +2907,12 @@ bang = util.format(sat)
 if (sat == undefined) {
 bang = util.format(sul)
 }
-return m.Reply(bang)
+return m.reply(bang)
 }
 try {
-m.Reply(util.format(eval(`(async () => { return ${budy.slice(3)} })()`)))
+m.reply(util.format(eval(`(async () => { return ${budy.slice(3)} })()`)))
 } catch (e) {
-m.Reply(String(e))
+m.reply(String(e))
 }
 }
 
@@ -2262,15 +2945,15 @@ teks = await eval(`(async () => { ${kode == ">>" ? "return" : ""} ${q}})()`)
 } catch (e) {
 teks = e
 } finally {
-await m.Reply(require('util').format(teks))
+await m.reply(require('util').format(teks))
 }
 }
 
 if (budy.startsWith('$')) {
 if (!isCreator) return
 exec(budy.slice(2), (err, stdout) => {
-if (err) return m.Reply(`${err}`)
-if (stdout) return m.Reply(stdout)
+if (err) return m.reply(`${err}`)
+if (stdout) return m.reply(stdout)
 })
 }
 }
