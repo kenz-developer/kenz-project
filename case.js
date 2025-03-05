@@ -5,7 +5,7 @@
 
 require("./config")
 const fs = require('fs')
-const chalk = require("chalk").default
+const chalk = require("chalk")
 const util = require('util')
 const axios = require('axios')
 const { exec } = require("child_process")
