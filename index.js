@@ -12,7 +12,7 @@ const { default: makeWASocket, DisconnectReason, makeInMemoryStore, jidDecode, p
 const pino = require('pino')
 const { Boom } = require('@hapi/boom')
 const fs = require('fs')
-const chalk = require("chalk").default
+const chalk = require("chalk")
 const FileType = require('file-type');
 const readline = require("readline");
 const PhoneNumber = require('awesome-phonenumber')
