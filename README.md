@@ -1,5 +1,10 @@
 # **SCRIPT PROJECT KENZ V2**
 
+KALO CLONE BELUM BISA INSTAL DULU INI YA
+```sh
+npm install git
+```
+
 CLONE DULU SCRIPT NYA
 ```sh
 git clone https://github.com/kenz-developer/kenz-project.git
